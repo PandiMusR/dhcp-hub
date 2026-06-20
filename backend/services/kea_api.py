@@ -102,3 +102,41 @@ async def get_kea_status() -> dict:
         return {}
     except Exception:
         return {}
+
+
+def find_lease_by_ip(ip_address: str) -> dict | None:
+    for lease in _read_leases_csv():
+        if lease.get("ip-address") == ip_address:
+            return lease
+    return None
+
+
+def delete_lease_by_ip(ip_address: str) -> bool:
+    _send_command_sync("lease4-del", {"ip-address": ip_address})
+
+    csv_path = Path(KEA_LEASES_CSV)
+    if not csv_path.exists():
+        return False
+
+    try:
+        rows = []
+        removed = False
+        with open(csv_path, "r") as f:
+            reader = csv.DictReader(f)
+            fieldnames = reader.fieldnames
+            for row in reader:
+                if row.get("address") == ip_address:
+                    removed = True
+                else:
+                    rows.append(row)
+
+        if removed and fieldnames:
+            with open(csv_path, "w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(rows)
+
+        return removed
+    except Exception as e:
+        logger.warning(f"Failed to delete lease {ip_address} from CSV: {e}")
+        return False

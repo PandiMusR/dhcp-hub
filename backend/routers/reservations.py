@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from models import HostReservation, Hotspot
 from schemas import ReservationCreate, ReservationResponse, ReservationUpdate
+from services.kea_api import delete_lease_by_ip, find_lease_by_ip
 
 router = APIRouter(prefix="/api/hotspots/{hotspot_id}/reservations", tags=["reservations"])
 
@@ -50,6 +51,10 @@ async def create_reservation(
     )
     if existing_ip.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="IP address already reserved in this subnet")
+
+    conflicting = find_lease_by_ip(data.ip_address)
+    if conflicting and conflicting.get("hw-address", "").lower() != data.hw_address.lower():
+        delete_lease_by_ip(data.ip_address)
 
     reservation = HostReservation(hotspot_id=hotspot_id, **data.model_dump())
     db.add(reservation)
