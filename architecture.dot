@@ -1,0 +1,144 @@
+digraph DHCPHub {
+    rankdir=BT;
+    fontname="Helvetica";
+    node [fontname="Helvetica", fontsize=11, shape=box, style="rounded,filled", fillcolor="#f0f0f0"];
+    edge [fontname="Helvetica", fontsize=9];
+    splines=polyline;
+    nodesep=0.8;
+    ranksep=1.0;
+
+    // ==================== CLIENTS (PALING BAWAH) ====================
+    subgraph cluster_clients {
+        label="Client Networks";
+        style="rounded,filled";
+        color="#bf9000";
+        fillcolor="#fff2cc";
+        fontsize=12;
+        fontname="Helvetica Bold";
+        margin=20;
+
+        clients_a [label="Hotspot A\nClients", fillcolor="#fff2cc"];
+        clients_b [label="Hotspot B\nClients", fillcolor="#fff2cc"];
+        clients_dots [label="...", shape=plaintext, fontcolor="#666666", fontsize=16];
+        clients_n [label="Hotspot N\nClients", fillcolor="#fff2cc"];
+
+        {rank=same; clients_a; clients_b; clients_dots; clients_n;}
+    }
+
+    // ==================== ROUTERS (TENGAH BAWAH) ====================
+    subgraph cluster_routers {
+        label="Routers / DHCP Relay";
+        style="rounded,filled";
+        color="#e69138";
+        fillcolor="#fce5cd";
+        fontsize=12;
+        fontname="Helvetica Bold";
+        margin=20;
+
+        router_a [label="Router A\ngiaddr: 10.198.0.1", fillcolor="#f9cb9c"];
+        router_b [label="Router B\ngiaddr: 10.199.0.1", fillcolor="#f9cb9c"];
+        router_dots [label="...", shape=plaintext, fontcolor="#666666", fontsize=16];
+        router_n [label="Router N\ngiaddr: 10.x.x.1", fillcolor="#f9cb9c"];
+
+        {rank=same; router_a; router_b; router_dots; router_n;}
+    }
+
+    // ==================== VPS (ATAS) ====================
+    subgraph cluster_vps {
+        label="VPS (DHCP Hub)";
+        style="rounded,dashed";
+        color="#333333";
+        fontsize=14;
+        fontname="Helvetica Bold";
+        bgcolor="#fafafa";
+        margin=30;
+
+        // Kea Server
+        subgraph cluster_kea {
+            label="Kea DHCP4 Server — Interface: wg0 (WireGuard)";
+            style="rounded,filled";
+            color="#6aa84f";
+            fillcolor="#eaf4e2";
+            fontsize=12;
+            fontname="Helvetica Bold";
+            margin=25;
+
+            subnet1 [label="Subnet 1\n10.198.0.0/24\nHotspot A", fillcolor="#b6d7a8"];
+            subnet2 [label="Subnet 2\n10.199.0.0/24\nHotspot B", fillcolor="#b6d7a8"];
+            subnet_dots [label="...", shape=plaintext, fontcolor="#666666", fontsize=16];
+            subnetN [label="Subnet N\n10.x.x.0/24\nHotspot N", fillcolor="#b6d7a8"];
+
+            {rank=same; subnet1; subnet2; subnet_dots; subnetN;}
+        }
+
+        // Kea API
+        kea_api [label="Kea Control Agent\n(REST API / Unix Socket)", fillcolor="#d5a6bd", fontcolor="#ffffff"];
+
+        // Web UI
+        subgraph cluster_webui {
+            label="DHCP Hub — Web UI";
+            style="rounded,filled";
+            color="#4a90d9";
+            fillcolor="#e8f0fe";
+            fontsize=12;
+            fontname="Helvetica Bold";
+            margin=25;
+
+            crud [label="CRUD\nSubnet / Hotspot", fillcolor="#cfe2f3"];
+            monitoring [label="Monitoring\nLease Real-time", fillcolor="#cfe2f3"];
+            autogen [label="Auto-Generate\nConfig Kea", fillcolor="#cfe2f3"];
+
+            {rank=same; crud; monitoring; autogen;}
+        }
+    }
+
+    // ==================== KONEKSI ====================
+
+    // Client -> Router
+    clients_a -> router_a [label="DHCP\nBroadcast", color="#bf9000", penwidth=1.5];
+    clients_b -> router_b [label="DHCP\nBroadcast", color="#bf9000", penwidth=1.5];
+    clients_n -> router_n [label="DHCP\nBroadcast", color="#bf9000", penwidth=1.5];
+
+    // Router -> Kea (via WireGuard)
+    router_a -> subnet1 [label="DHCP Relay\nunicast +giaddr\n(WireGuard)", style=dashed, color="#6aa84f", penwidth=1.5];
+    router_b -> subnet2 [label="DHCP Relay\nunicast +giaddr\n(WireGuard)", style=dashed, color="#6aa84f", penwidth=1.5];
+    router_n -> subnetN [label="DHCP Relay\nunicast +giaddr\n(WireGuard)", style=dashed, color="#6aa84f", penwidth=1.5];
+
+    // Subnets -> Kea API
+    subnet1 -> kea_api [label="manage", color="#d5a6bd"];
+    subnet2 -> kea_api [color="#d5a6bd"];
+    subnetN -> kea_api [color="#d5a6bd"];
+
+    // Kea API -> Web UI features
+    kea_api -> crud [color="#4a90d9"];
+    kea_api -> monitoring [color="#4a90d9"];
+    kea_api -> autogen [color="#4a90d9"];
+
+    // ==================== FLOW ANNOTATION ====================
+    flow [
+        label="Packet Flow:\n\n1. Client broadcast DHCP Discover\n2. Router tangkap, relay unicast ke VPS\n   (+giaddr = IP router di subnet client)\n3. Kea terima di wg0, match giaddr → subnet\n4. Kea assign IP dari pool, kirim ACK\n5. ACK kembali ke Client via Router\n\nAdmin Flow:\n\n1. Tambah hotspot di Web UI\n2. Data simpan ke DB\n3. Generate & apply config Kea\n4. Set DHCP Relay di router (manual)"
+        shape=note
+        fillcolor="#ffffcc"
+        style=filled
+        fontsize=10
+        width=5
+    ];
+
+    // ==================== LEGEND ====================
+    subgraph cluster_legend {
+        label="Legend";
+        style="rounded,filled";
+        color="#cccccc";
+        fillcolor="#f5f5f5";
+        fontsize=10;
+        margin=15;
+
+        leg1 [label="Web UI Feature", fillcolor="#cfe2f3"];
+        leg2 [label="Kea Control Agent", fillcolor="#d5a6bd", fontcolor="#ffffff"];
+        leg3 [label="DHCP Subnet", fillcolor="#b6d7a8"];
+        leg4 [label="Router / Relay", fillcolor="#f9cb9c"];
+        leg5 [label="Client Network", fillcolor="#fff2cc"];
+
+        {rank=same; leg1; leg2; leg3; leg4; leg5;}
+    }
+}
