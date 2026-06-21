@@ -60,13 +60,13 @@ class LfcUpdate(BaseModel):
 
 
 LFC_LABELS = {
-    3600: "1 jam",
-    21600: "6 jam",
     43200: "12 jam",
     86400: "1 hari",
     172800: "2 hari",
     259200: "3 hari",
     604800: "7 hari",
+    1209600: "14 hari",
+    2419200: "28 hari",
 }
 
 
@@ -89,7 +89,7 @@ async def get_lfc():
 
 @router.put("/lfc", response_model=LfcSettings)
 async def update_lfc(body: LfcUpdate):
-    if body.lfc_interval < 60 or body.lfc_interval > 2592000:
+    if body.lfc_interval < 43200 or body.lfc_interval > 2419200:
         raise HTTPException(status_code=400, detail="LFC interval harus antara 60 - 2592000 detik")
 
     try:

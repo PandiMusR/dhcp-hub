@@ -266,13 +266,13 @@ export function Config() {
               disabled={savingLfc}
               className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
             >
-              <option value={3600}>1 jam</option>
-              <option value={21600}>6 jam</option>
               <option value={43200}>12 jam</option>
               <option value={86400}>1 hari</option>
               <option value={172800}>2 hari</option>
               <option value={259200}>3 hari</option>
               <option value={604800}>7 hari</option>
+              <option value={1209600}>14 hari</option>
+              <option value={2419200}>28 hari</option>
             </select>
           </div>
         </CardContent>
