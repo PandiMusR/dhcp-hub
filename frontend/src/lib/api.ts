@@ -183,6 +183,12 @@ export const api = {
     backups: () => request<{ backups: Array<{ filename: string; path: string; size: number; modified: string }> }>("/config/backups"),
     rollback: (filename: string) =>
       request<ConfigApplyResult>(`/config/rollback/${filename}`, { method: "POST" }),
+    getLfc: () => request<{ lfc_interval: number; lfc_interval_label: string }>("/config/lfc"),
+    updateLfc: (lfc_interval: number) =>
+      request<{ lfc_interval: number; lfc_interval_label: string }>("/config/lfc", {
+        method: "PUT",
+        body: JSON.stringify({ lfc_interval }),
+      }),
   },
   reservations: {
     list: (hotspotId: number) =>

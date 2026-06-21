@@ -61,7 +61,7 @@ def generate_kea_config(hotspots: list[Hotspot], interface: str = "wg1") -> dict
                 "type": "memfile",
                 "persist": True,
                 "name": "/var/lib/kea/kea-leases4.csv",
-                "lfc-interval": 259200,
+                "lfc-interval": 604800,
             },
             "valid-lifetime": 86400,
             "renew-timer": 43200,

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog"
 import { api, type ConfigApplyResult } from "@/lib/api"
 import { toast } from "@/lib/toast"
-import { Play, Eye, RotateCcw, FileCode, CheckCircle, XCircle, ArrowRight } from "lucide-react"
+import { Play, Eye, RotateCcw, FileCode, CheckCircle, XCircle, ArrowRight, Settings } from "lucide-react"
 
 export function Config() {
   const [preview, setPreview] = useState<string>("")
@@ -22,6 +22,16 @@ export function Config() {
   const [activeTab, setActiveTab] = useState<"preview" | "current" | "backups">("preview")
   const [applyDialogOpen, setApplyDialogOpen] = useState(false)
   const [rollbackTarget, setRollbackTarget] = useState<string | null>(null)
+  const [lfcInterval, setLfcInterval] = useState<number>(604800)
+  const [lfcLabel, setLfcLabel] = useState<string>("7 hari")
+  const [savingLfc, setSavingLfc] = useState(false)
+
+  useEffect(() => {
+    api.config.getLfc().then((d) => {
+      setLfcInterval(d.lfc_interval)
+      setLfcLabel(d.lfc_interval_label)
+    }).catch(() => {})
+  }, [])
 
   const handlePreview = async () => {
     setLoading("preview")
@@ -88,6 +98,20 @@ export function Config() {
       setResult({ success: false, message: err instanceof Error ? err.message : "Failed", backup_path: null })
     } finally {
       setLoading(null)
+    }
+  }
+
+  const handleLfcUpdate = async (interval: number) => {
+    setSavingLfc(true)
+    try {
+      const d = await api.config.updateLfc(interval)
+      setLfcInterval(d.lfc_interval)
+      setLfcLabel(d.lfc_interval_label)
+      toast({ title: "LFC diupdate", description: `Cleanup interval: ${d.lfc_interval_label}`, variant: "success" })
+    } catch (err) {
+      toast({ title: "Gagal update LFC", description: err instanceof Error ? err.message : "Terjadi kesalahan", variant: "destructive" })
+    } finally {
+      setSavingLfc(false)
     }
   }
 
@@ -220,6 +244,39 @@ export function Config() {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Global Settings
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Lease File Cleanup (LFC) Interval</p>
+              <p className="text-xs text-muted-foreground">
+                Seberapa sering lease expired dibersihkan dari CSV. Saat ini: <strong>{lfcLabel}</strong>
+              </p>
+            </div>
+            <select
+              value={lfcInterval}
+              onChange={(e) => handleLfcUpdate(Number(e.target.value))}
+              disabled={savingLfc}
+              className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
+            >
+              <option value={3600}>1 jam</option>
+              <option value={21600}>6 jam</option>
+              <option value={43200}>12 jam</option>
+              <option value={86400}>1 hari</option>
+              <option value={172800}>2 hari</option>
+              <option value={259200}>3 hari</option>
+              <option value={604800}>7 hari</option>
+            </select>
+          </div>
+        </CardContent>
+      </Card>
 
       <Dialog open={applyDialogOpen} onOpenChange={setApplyDialogOpen}>
         <DialogContent>
