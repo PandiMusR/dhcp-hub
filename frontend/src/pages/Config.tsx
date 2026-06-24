@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Dialog,
   DialogContent,
@@ -25,6 +27,11 @@ export function Config() {
   const [lfcInterval, setLfcInterval] = useState<number>(604800)
   const [lfcLabel, setLfcLabel] = useState<string>("7 hari")
   const [savingLfc, setSavingLfc] = useState(false)
+  const [oldPass, setOldPass] = useState("")
+  const [newPass, setNewPass] = useState("")
+  const [confirmPass, setConfirmPass] = useState("")
+  const [changingPass, setChangingPass] = useState(false)
+  const [passDialogOpen, setPassDialogOpen] = useState(false)
 
   useEffect(() => {
     api.config.getLfc().then((d) => {
@@ -112,6 +119,30 @@ export function Config() {
       toast({ title: "Gagal update LFC", description: err instanceof Error ? err.message : "Terjadi kesalahan", variant: "destructive" })
     } finally {
       setSavingLfc(false)
+    }
+  }
+
+  const handleChangePassword = async () => {
+    if (newPass !== confirmPass) {
+      toast({ title: "Password tidak cocok", description: "Konfirmasi password harus sama", variant: "destructive" })
+      return
+    }
+    if (newPass.length < 6) {
+      toast({ title: "Password terlalu pendek", description: "Minimal 6 karakter", variant: "destructive" })
+      return
+    }
+    setChangingPass(true)
+    try {
+      await api.auth.changePassword(oldPass, newPass)
+      toast({ title: "Password diubah", description: "Password berhasil diubah, gunakan password baru saat login berikutnya", variant: "success" })
+      setOldPass("")
+      setNewPass("")
+      setConfirmPass("")
+      setPassDialogOpen(false)
+    } catch (err) {
+      toast({ title: "Gagal ubah password", description: err instanceof Error ? err.message : "Terjadi kesalahan", variant: "destructive" })
+    } finally {
+      setChangingPass(false)
     }
   }
 
@@ -252,7 +283,7 @@ export function Config() {
             Global Settings
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium">Lease File Cleanup (LFC) Interval</p>
@@ -274,6 +305,15 @@ export function Config() {
               <option value={1209600}>14 hari</option>
               <option value={2419200}>28 hari</option>
             </select>
+          </div>
+          <div className="border-t pt-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Password</p>
+              <p className="text-xs text-muted-foreground">Ubah password login Web UI</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setPassDialogOpen(true)}>
+              Ubah Password
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -309,6 +349,37 @@ export function Config() {
             <Button variant="destructive" onClick={handleRollback}>
               <RotateCcw className="mr-2 h-4 w-4" />
               Rollback
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={passDialogOpen} onOpenChange={setPassDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ubah Password</DialogTitle>
+            <DialogDescription>
+              Masukkan password lama dan password baru.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Password Lama</Label>
+              <Input type="password" value={oldPass} onChange={(e) => setOldPass(e.target.value)} placeholder="Password saat ini" />
+            </div>
+            <div className="space-y-2">
+              <Label>Password Baru</Label>
+              <Input type="password" value={newPass} onChange={(e) => setNewPass(e.target.value)} placeholder="Minimal 6 karakter" />
+            </div>
+            <div className="space-y-2">
+              <Label>Konfirmasi Password Baru</Label>
+              <Input type="password" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} placeholder="Ulangi password baru" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPassDialogOpen(false)}>Batal</Button>
+            <Button onClick={handleChangePassword} disabled={changingPass}>
+              {changingPass ? "Menyimpan..." : "Simpan"}
             </Button>
           </DialogFooter>
         </DialogContent>

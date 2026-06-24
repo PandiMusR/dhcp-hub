@@ -232,6 +232,11 @@ export const api = {
       setToken(data.token)
       return data
     },
+    changePassword: (old_password: string, new_password: string) =>
+      request<{ message: string }>("/auth/change-password", {
+        method: "POST",
+        body: JSON.stringify({ old_password, new_password }),
+      }),
   },
   system: {
     info: () => request<SystemInfo>("/system"),

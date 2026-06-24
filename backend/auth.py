@@ -4,12 +4,14 @@ import json
 import os
 import time
 from base64 import urlsafe_b64decode, urlsafe_b64encode
+from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-load_dotenv("/root/apps/DHCPHub/.env")
+ENV_PATH = Path("/root/apps/DHCPHub/.env")
+load_dotenv(ENV_PATH)
 
 ADMIN_USER = os.getenv("ADMIN_USER", "admin")
 ADMIN_PASS = os.getenv("ADMIN_PASS", "admin")
@@ -22,6 +24,11 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 class LoginRequest(BaseModel):
     username: str
     password: str
+
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
 
 
 def _sign(payload: str) -> str:
@@ -70,3 +77,33 @@ async def verify(request: Request):
     if not token or not verify_token(token):
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     return {"valid": True}
+
+
+@router.post("/change-password")
+async def change_password(body: ChangePasswordRequest, request: Request):
+    global ADMIN_PASS
+
+    token = (request.headers.get("authorization") or "").removeprefix("Bearer ").strip()
+    if not token or not verify_token(token):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    if body.old_password != ADMIN_PASS:
+        raise HTTPException(status_code=400, detail="Password lama salah")
+
+    if len(body.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password minimal 6 karakter")
+
+    try:
+        lines = ENV_PATH.read_text().splitlines()
+        new_lines = []
+        for line in lines:
+            if line.startswith("ADMIN_PASS="):
+                new_lines.append(f"ADMIN_PASS={body.new_password}")
+            else:
+                new_lines.append(line)
+        ENV_PATH.write_text("\n".join(new_lines) + "\n")
+        ADMIN_PASS = body.new_password
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gagal update password: {e}")
+
+    return {"message": "Password berhasil diubah"}
