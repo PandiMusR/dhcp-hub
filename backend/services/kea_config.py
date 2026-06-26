@@ -63,9 +63,17 @@ def generate_kea_config(hotspots: list[Hotspot], interface: str = "wg1") -> dict
                 "name": "/var/lib/kea/kea-leases4.csv",
                 "lfc-interval": 604800,
             },
-            "valid-lifetime": 86400,
-            "renew-timer": 43200,
-            "rebind-timer": 75600,
+            "expired-leases-processing": {
+                "reclaim-timer-wait-time": 60,
+                "flush-reclaimed-timer-wait-time": 25,
+                "hold-reclaimed-time": 345600,
+                "max-reclaim-leases": 100,
+                "max-reclaim-time": 250,
+                "unwarned-reclaim-cycles": 5,
+            },
+            "valid-lifetime": 259200,
+            "renew-timer": 129600,
+            "rebind-timer": 226800,
             "subnet4": subnet4,
             "loggers": [
                 {

@@ -53,11 +53,12 @@ async def get_stats(db: AsyncSession = Depends(get_db)):
     enabled_subnets = sum(1 for h in hotspots if h.enabled)
 
     all_leases = await get_all_leases()
-    total_leases = len(all_leases)
+    hotspot_ids = {h.id for h in hotspots}
+    registered_leases = [l for l in all_leases if l.get("subnet-id") in hotspot_ids]
 
     subnet_stats = []
     for h in hotspots:
-        subnet_leases = [l for l in all_leases if l.get("subnet-id") == h.id]
+        subnet_leases = [l for l in registered_leases if l.get("subnet-id") == h.id]
         active = [l for l in subnet_leases if l.get("state") == 0]
         subnet_stats.append(
             SubnetStats(
@@ -68,7 +69,8 @@ async def get_stats(db: AsyncSession = Depends(get_db)):
             )
         )
 
-    active_leases = sum(1 for l in all_leases if l.get("state") == 0)
+    total_leases = len(registered_leases)
+    active_leases = sum(1 for l in registered_leases if l.get("state") == 0)
 
     return GlobalStats(
         total_subnets=total_subnets,

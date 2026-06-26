@@ -19,6 +19,7 @@ export function Leases() {
   const [hotspots, setHotspots] = useState<Hotspot[]>([])
   const [loading, setLoading] = useState(true)
   const [filterSubnet, setFilterSubnet] = useState<number | "">("")
+  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "expired">("all")
   const [search, setSearch] = useState("")
 
   useEffect(() => {
@@ -46,6 +47,11 @@ export function Leases() {
     if (filterSubnet !== "") {
       result = result.filter((l) => l.subnet_id === filterSubnet)
     }
+    if (filterStatus === "active") {
+      result = result.filter((l) => l.state === 0)
+    } else if (filterStatus === "expired") {
+      result = result.filter((l) => l.state !== 0)
+    }
     if (search.trim()) {
       const q = search.toLowerCase()
       result = result.filter((l) =>
@@ -55,7 +61,7 @@ export function Leases() {
       )
     }
     return result
-  }, [leases, filterSubnet, search])
+  }, [leases, filterSubnet, filterStatus, search])
 
   const getRelativeTime = (expire: string | null): string => {
     if (!expire) return "-"
@@ -95,7 +101,7 @@ export function Leases() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg flex items-center justify-between flex-wrap gap-2">
-            <span>Lease Aktif</span>
+            <span>Lease</span>
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -106,6 +112,15 @@ export function Leases() {
                   className="pl-8 h-8 w-48"
                 />
               </div>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as "all" | "active" | "expired")}
+                className="h-8 rounded-md border border-input bg-background px-3 py-1 text-sm"
+              >
+                <option value="all">Semua Status</option>
+                <option value="active">Aktif</option>
+                <option value="expired">Expired</option>
+              </select>
               <select
                 value={filterSubnet}
                 onChange={(e) => setFilterSubnet(e.target.value === "" ? "" : Number(e.target.value))}
@@ -136,9 +151,9 @@ export function Leases() {
             </div>
           ) : filteredLeases.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
-              {filterSubnet === ""
-                ? "Tidak ada lease aktif. Pastikan Kea DHCP server berjalan."
-                : "Tidak ada lease di hotspot ini."}
+              {filterSubnet === "" && filterStatus === "all"
+                ? "Tidak ada lease. Pastikan Kea DHCP server berjalan."
+                : "Tidak ada lease yang sesuai filter."}
             </div>
           ) : (
             <Table>

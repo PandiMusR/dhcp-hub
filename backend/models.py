@@ -15,7 +15,7 @@ class Hotspot(Base):
     pool_start: Mapped[str] = mapped_column(String(15), nullable=False)
     pool_end: Mapped[str] = mapped_column(String(15), nullable=False)
     dns: Mapped[str] = mapped_column(String(255), nullable=False, default="1.1.1.1, 8.8.8.8")
-    lease_time: Mapped[int] = mapped_column(Integer, nullable=False, default=86400)
+    lease_time: Mapped[int] = mapped_column(Integer, nullable=False, default=259200)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
