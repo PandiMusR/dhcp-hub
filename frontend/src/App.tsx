@@ -5,13 +5,14 @@ import { Leases } from "@/pages/Leases"
 import { Config } from "@/pages/Config"
 import { WireGuard } from "@/pages/WireGuard"
 import { SystemMonitor } from "@/pages/SystemMonitor"
+import { Logs } from "@/pages/Logs"
 import { Login } from "@/pages/Login"
 import { Toaster } from "@/components/Toaster"
 import { getToken, clearToken } from "@/lib/api"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Network, Activity, Settings, Shield, LogOut, Menu, X, Gauge } from "lucide-react"
+import { LayoutDashboard, Network, Activity, Settings, Shield, LogOut, Menu, X, Gauge, ScrollText } from "lucide-react"
 
-type Page = "dashboard" | "hotspots" | "leases" | "wireguard" | "config" | "system"
+type Page = "dashboard" | "hotspots" | "leases" | "wireguard" | "config" | "system" | "logs"
 
 const navItems: { id: Page; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -19,6 +20,7 @@ const navItems: { id: Page; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "leases", label: "Lease", icon: Activity },
   { id: "wireguard", label: "WireGuard", icon: Shield },
   { id: "config", label: "Config", icon: Settings },
+  { id: "logs", label: "Logs", icon: ScrollText },
   { id: "system", label: "System", icon: Gauge },
 ]
 
@@ -131,6 +133,7 @@ export default function App() {
         {page === "wireguard" && <WireGuard />}
         {page === "config" && <Config />}
         {page === "system" && <SystemMonitor />}
+        {page === "logs" && <Logs />}
       </main>
     </div>
   )

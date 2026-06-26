@@ -154,3 +154,40 @@ async def get_system_info():
         kea_subnets=_count_kea_subnets(),
         kea_leases=_count_kea_leases(),
     )
+
+
+KEA_LOG_PATH = Path("/var/log/kea/kea-dhcp4.log")
+
+
+class LogEntry(BaseModel):
+    line: str
+
+
+class LogResponse(BaseModel):
+    lines: list[str]
+    total_lines: int
+
+
+@router.get("/logs", response_model=LogResponse)
+async def get_logs(lines: int = 200, search: str = ""):
+    if not KEA_LOG_PATH.exists():
+        return LogResponse(lines=[], total_lines=0)
+
+    try:
+        with open(KEA_LOG_PATH, "r") as f:
+            all_lines = f.readlines()
+
+        total = len(all_lines)
+        recent = all_lines[-min(lines, 2000):]
+
+        if search:
+            search_lower = search.lower()
+            recent = [l for l in recent if search_lower in l.lower()]
+
+        return LogResponse(
+            lines=[l.rstrip() for l in recent[-lines:]],
+            total_lines=total,
+        )
+    except Exception as e:
+        logger.warning(f"Failed to read Kea log: {e}")
+        return LogResponse(lines=[], total_lines=0)

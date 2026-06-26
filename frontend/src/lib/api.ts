@@ -240,5 +240,7 @@ export const api = {
   },
   system: {
     info: () => request<SystemInfo>("/system"),
+    logs: (lines = 200, search = "") =>
+      request<{ lines: string[]; total_lines: number }>(`/system/logs?lines=${lines}&search=${encodeURIComponent(search)}`),
   },
 }
