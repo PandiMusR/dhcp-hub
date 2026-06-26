@@ -139,6 +139,9 @@ def _get_interface_ips(interface: str) -> list[str]:
 
 
 def _sync_interface_ip(interface: str, desired_address: str) -> None:
+    if not interface.startswith("wg"):
+        return
+
     current_ips = _get_interface_ips(interface)
     if desired_address in current_ips:
         return
@@ -154,6 +157,9 @@ def _sync_interface_ip(interface: str, desired_address: str) -> None:
 
 
 def _sync_routes(interface: str, hotspots: list[Hotspot], router_address: str) -> None:
+    if not interface.startswith("wg"):
+        return
+
     result = subprocess.run(
         ["ip", "-4", "-o", "route", "show", "dev", interface],
         capture_output=True, text=True, timeout=5,
