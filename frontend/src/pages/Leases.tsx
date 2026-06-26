@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { api, type LeaseInfo, type Hotspot } from "@/lib/api"
-import { Search } from "lucide-react"
+import { Search, ArrowUp, ArrowDown } from "lucide-react"
 
 export function Leases() {
   const [leases, setLeases] = useState<LeaseInfo[]>([])
@@ -21,6 +21,7 @@ export function Leases() {
   const [filterSubnet, setFilterSubnet] = useState<number | "">("")
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "expired">("all")
   const [search, setSearch] = useState("")
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
 
   useEffect(() => {
     const load = async () => {
@@ -69,8 +70,13 @@ export function Leases() {
         (l.hostname || "").toLowerCase().includes(q)
       )
     }
+    result = [...result].sort((a, b) => {
+      const aExp = a.expire ? new Date(a.expire).getTime() : 0
+      const bExp = b.expire ? new Date(b.expire).getTime() : 0
+      return sortDir === "asc" ? aExp - bExp : bExp - aExp
+    })
     return result
-  }, [leases, filterSubnet, filterStatus, search])
+  }, [leases, filterSubnet, filterStatus, search, sortDir])
 
   const getRelativeTime = (expire: string | null): string => {
     if (!expire) return "-"
@@ -172,7 +178,15 @@ export function Leases() {
                   <TableHead>MAC Address</TableHead>
                   <TableHead>Hostname</TableHead>
                   <TableHead>Hotspot</TableHead>
-                  <TableHead>Sisa Waktu</TableHead>
+                  <TableHead>
+                    <button
+                      onClick={() => setSortDir(sortDir === "asc" ? "desc" : "asc")}
+                      className="flex items-center gap-1 hover:text-foreground transition-colors"
+                    >
+                      Sisa Waktu
+                      {sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                    </button>
+                  </TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
