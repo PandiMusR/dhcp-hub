@@ -42,15 +42,24 @@ export function Leases() {
     return () => clearInterval(interval)
   }, [])
 
+  const isExpired = (expire: string | null): boolean => {
+    if (!expire) return false
+    try {
+      return new Date(expire).getTime() < Date.now()
+    } catch {
+      return false
+    }
+  }
+
   const filteredLeases = useMemo(() => {
     let result = leases
     if (filterSubnet !== "") {
       result = result.filter((l) => l.subnet_id === filterSubnet)
     }
     if (filterStatus === "active") {
-      result = result.filter((l) => l.state === 0)
+      result = result.filter((l) => l.state === 0 && !isExpired(l.expire))
     } else if (filterStatus === "expired") {
-      result = result.filter((l) => l.state !== 0)
+      result = result.filter((l) => l.state !== 0 || isExpired(l.expire))
     }
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -180,8 +189,8 @@ export function Leases() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={l.state === 0 ? "success" : "secondary"}>
-                        {l.state === 0 ? "Aktif" : l.state === 1 ? "Expired" : `State ${l.state}`}
+                      <Badge variant={l.state === 0 && !isExpired(l.expire) ? "success" : "secondary"}>
+                        {l.state === 0 && !isExpired(l.expire) ? "Aktif" : "Expired"}
                       </Badge>
                     </TableCell>
                   </TableRow>
